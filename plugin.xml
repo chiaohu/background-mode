@@ -42,6 +42,13 @@
             </array>
         </config-file>
 
+        <edit-config target="UIBackgroundModes" file="*-Info.plist" mode="merge">
+            <array>
+                <string>audio</string>
+                <string>fetch</string>
+            </array>
+        </edit-config>
+
         <resource-file src="appbeep.wav" />
 
         <header-file src="src/ios/APPBackgroundMode.h" />

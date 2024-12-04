@@ -14,7 +14,6 @@ import android.os.Build;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.app.NotificationChannel;
-import android.util.Log;
 
 import org.json.JSONObject;
 
@@ -107,8 +106,6 @@ public class ForegroundService extends Service {
 
         String title = settings.optString("title", NOTIFICATION_TITLE);
         String text = settings.optString("text", NOTIFICATION_TEXT);
-        Log.d("BackgroundMode", "Notification Title: " + title);
-        Log.d("BackgroundMode", "Notification Text: " + text);
 
         Context context = getApplicationContext();
         String pkgName = context.getPackageName();
@@ -127,7 +124,6 @@ public class ForegroundService extends Service {
             int iconResId = getIconResId(settings);
             notification.setSmallIcon(iconResId);
         } catch (Exception e) {
-            Log.e("BackgroundMode", "Failed to set icon, using default", e);
             notification.setSmallIcon(android.R.drawable.sym_def_app_icon);
         }
 
@@ -181,7 +177,6 @@ public class ForegroundService extends Service {
         }
 
         if (resId == 0) {
-            Log.w("BackgroundMode", "Icon resource not found, using default");
             resId = android.R.drawable.sym_def_app_icon;
         }
 

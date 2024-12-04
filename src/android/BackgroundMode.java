@@ -1,202 +1,213 @@
 package de.einfachhans.BackgroundMode;
 
-import android.app.Activity;
-import android.content.ComponentName;
+import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
-import android.content.ServiceConnection;
+import android.content.res.Resources;
+import android.os.Binder;
+import android.os.Build;
 import android.os.IBinder;
+import android.os.PowerManager;
+import android.app.NotificationChannel;
 
-import org.apache.cordova.CallbackContext;
-import org.apache.cordova.CordovaPlugin;
-import org.apache.cordova.PluginResult;
-import org.apache.cordova.PluginResult.Status;
-import org.json.JSONArray;
 import org.json.JSONObject;
 
-import de.einfachhans.BackgroundMode.ForegroundService.ForegroundBinder;
+import static android.os.PowerManager.PARTIAL_WAKE_LOCK;
 
-import static android.content.Context.BIND_AUTO_CREATE;
-import static de.einfachhans.BackgroundMode.BackgroundModeExt.clearKeyguardFlags;
+/**
+ * Puts the service in a foreground state, where the system considers it to be
+ * something the user is actively aware of and thus not a candidate for killing
+ * when low on memory.
+ */
+public class ForegroundService extends Service {
 
-public class BackgroundMode extends CordovaPlugin {
+    // Fixed ID for the 'foreground' notification
+    public static final int NOTIFICATION_ID = -574543954;
 
-    // Event types for callbacks
-    private enum Event { ACTIVATE, DEACTIVATE, FAILURE }
+    // Default title of the background notification
+    private static final String NOTIFICATION_TITLE =
+            "App is running in background";
 
-    // Plugin namespace
-    private static final String JS_NAMESPACE = "cordova.plugins.backgroundMode";
+    // Default text of the background notification
+    private static final String NOTIFICATION_TEXT =
+            "Doing heavy tasks.";
 
-    // Flag indicates if the app is in background or foreground
-    private boolean inBackground = false;
+    // Default icon of the background notification
+    private static final String NOTIFICATION_ICON = "icon";
 
-    // Flag indicates if the plugin is enabled or disabled
-    private boolean isDisabled = true;
+    // Binder given to clients
+    private final IBinder binder = new ForegroundBinder();
 
-    // Flag indicates if the service is bind
-    private boolean isBind = false;
+    // Partial wake lock to prevent the app from going to sleep when locked
+    private PowerManager.WakeLock wakeLock;
 
-    // Default settings for the notification
-    private static JSONObject defaultSettings = new JSONObject();
+    /**
+     * Allow clients to call on to the service.
+     */
+    @Override
+    public IBinder onBind (Intent intent) {
+        return binder;
+    }
 
-    // Service that keeps the app awake
-    private ForegroundService service;
-
-    // Used to (un)bind the service to with the activity
-    private final ServiceConnection connection = new ServiceConnection()
+    /**
+     * Class used for the client Binder.  Because we know this service always
+     * runs in the same process as its clients, we don't need to deal with IPC.
+     */
+    class ForegroundBinder extends Binder
     {
-        @Override
-        public void onServiceConnected (ComponentName name, IBinder service)
+        ForegroundService getService()
         {
-            ForegroundBinder binder = (ForegroundBinder) service;
-            BackgroundMode.this.service = binder.getService();
+            // Return this instance of ForegroundService
+            // so clients can call public methods
+            return ForegroundService.this;
         }
-
-        @Override
-        public void onServiceDisconnected (ComponentName name)
-        {
-            fireEvent(Event.FAILURE, "'service disconnected'");
-        }
-    };
+    }
 
     /**
-     * Executes the request.
-     *
-     * @param action   The action to execute.
-     * @param args     The exec() arguments.
-     * @param callback The callback context used when
-     *                 calling back into JavaScript.
-     *
-     * @return Returning false results in a "MethodNotFound" error.
+     * Put the service in a foreground state to prevent app from being killed
+     * by the OS.
      */
     @Override
-    public boolean execute (String action, JSONArray args,
-                            CallbackContext callback)
+    public void onCreate()
     {
-        boolean validAction = true;
-
-        switch (action)
-        {
-            case "configure":
-                configure(args.optJSONObject(0), args.optBoolean(1));
-                PluginResult res = new PluginResult(Status.OK);
-                callback.sendPluginResult(res);
-                break;
-            case "enable":
-                enableMode();
-                break;
-            case "disable":
-                disableMode();
-                break;
-            default:
-                validAction = false;
-        }
-
-        if (validAction) {
-            callback.success();
-        } else {
-            callback.error("Invalid action: " + action);
-        }
-
-        return validAction;
+        super.onCreate();
+        keepAwake();
     }
 
     /**
-     * Called when the system is about to start resuming a previous activity.
-     *
-     * @param multitasking Flag indicating if multitasking is turned on for app.
-     */
-    @Override
-    public void onPause(boolean multitasking)
-    {
-        try {
-            inBackground = true;
-            startService();
-        } finally {
-            clearKeyguardFlags(cordova.getActivity());
-        }
-    }
-
-    /**
-     * Called when the activity is no longer visible to the user.
-     */
-    @Override
-    public void onStop () {
-        clearKeyguardFlags(cordova.getActivity());
-    }
-
-    /**
-     * Called when the activity will start interacting with the user.
-     *
-     * @param multitasking Flag indicating if multitasking is turned on for app.
-     */
-    @Override
-    public void onResume (boolean multitasking)
-    {
-        inBackground = false;
-        stopService();
-    }
-
-    /**
-     * Called when the activity will be destroyed.
+     * No need to run headless on destroy.
      */
     @Override
     public void onDestroy()
     {
-        stopService();
-        android.os.Process.killProcess(android.os.Process.myPid());
+        super.onDestroy();
+        sleepWell();
     }
 
     /**
-     * Enable the background mode.
+     * Prevent Android from stopping the background service automatically.
      */
-    private void enableMode()
-    {
-        isDisabled = false;
+    @Override
+    public int onStartCommand (Intent intent, int flags, int startId) {
+        return START_STICKY;
+    }
 
-        if (inBackground) {
-            startService();
+    /**
+     * Put the service in a foreground state to prevent app from being killed
+     * by the OS.
+     */
+    @SuppressLint("WakelockTimeout")
+    private void keepAwake()
+    {
+        JSONObject settings = BackgroundMode.getSettings();
+        boolean isSilent    = settings.optBoolean("silent", false);
+
+        if (!isSilent) {
+            startForeground(NOTIFICATION_ID, makeNotification());
+        }
+
+        PowerManager pm = (PowerManager)getSystemService(POWER_SERVICE);
+
+        wakeLock = pm.newWakeLock(
+                PARTIAL_WAKE_LOCK, "backgroundmode:wakelock");
+
+        wakeLock.acquire();
+    }
+
+    /**
+     * Stop background mode.
+     */
+    private void sleepWell()
+    {
+        stopForeground(true);
+        getNotificationManager().cancel(NOTIFICATION_ID);
+
+        if (wakeLock != null) {
+            wakeLock.release();
+            wakeLock = null;
         }
     }
 
     /**
-     * Disable the background mode.
+     * Create a notification as the visible part to be able to put the service
+     * in a foreground state by using the default settings.
      */
-    private void disableMode()
+    private Notification makeNotification()
     {
-        stopService();
-        isDisabled = true;
+        return makeNotification(BackgroundMode.getSettings());
     }
 
     /**
-     * Update the default settings and configure the notification.
+     * Create a notification as the visible part to be able to put the service
+     * in a foreground state.
      *
-     * @param settings The settings
-     * @param update A truthy value means to update the running service.
+     * @param settings The config settings
      */
-    private void configure(JSONObject settings, boolean update)
+    private Notification makeNotification (JSONObject settings)
     {
-        if (update) {
-            updateNotification(settings);
-        } else {
-            setDefaultSettings(settings);
+        // use channelid for Oreo and higher
+        String CHANNEL_ID = "cordova-plugin-background-mode-id";
+        if(Build.VERSION.SDK_INT >= 26){
+        // The user-visible name of the channel.
+        CharSequence name = "cordova-plugin-background-mode";
+        // The user-visible description of the channel.
+        String description = "cordova-plugin-background-moden notification";
+
+        int importance = NotificationManager.IMPORTANCE_LOW;
+
+        NotificationChannel mChannel = new NotificationChannel(CHANNEL_ID, name,importance);
+
+        // Configure the notification channel.
+        mChannel.setDescription(description);
+
+        getNotificationManager().createNotificationChannel(mChannel);
         }
-    }
+        String title    = settings.optString("title", NOTIFICATION_TITLE);
+        String text     = settings.optString("text", NOTIFICATION_TEXT);
+        boolean bigText = settings.optBoolean("bigText", false);
 
-    /**
-     * Update the default settings for the notification.
-     *
-     * @param settings The new default settings
-     */
-    private void setDefaultSettings(JSONObject settings)
-    {
-        defaultSettings = settings;
-    }
+        Context context = getApplicationContext();
+        String pkgName  = context.getPackageName();
+        Intent intent   = context.getPackageManager()
+                .getLaunchIntentForPackage(pkgName);
 
-    /**
-     * Returns the settings for the new/updated notification.
-     */
-    static JSONObject getSettings () {
-        return defaultSettings;
+        Notification.Builder notification = new Notification.Builder(context)
+                .setContentTitle(title)
+                .setContentText(text)
+                .setOngoing(true)
+                .setSmallIcon(getIconResId(settings));
+
+        if(Build.VERSION.SDK_INT >= 26){
+                   notification.setChannelId(CHANNEL_ID);
+        }
+
+        if (settings.optBoolean("hidden", true)) {
+            notification.setPriority(Notification.PRIORITY_MIN);
+        }
+
+        if (bigText || text.contains("\n")) {
+            notification.setStyle(
+                    new Notification.BigTextStyle().bigText(text));
+        }
+
+        setColor(notification, settings);
+
+        if (intent != null && settings.optBoolean("resume")) {
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            PendingIntent contentIntent = PendingIntent.getActivity(
+                    context, NOTIFICATION_ID, intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT);
+
+
+            notification.setContentIntent(contentIntent);
+        }
+
+        return notification.build();
     }
 
     /**
@@ -204,77 +215,88 @@ public class BackgroundMode extends CordovaPlugin {
      *
      * @param settings The config settings
      */
-    private void updateNotification(JSONObject settings)
+    protected void updateNotification (JSONObject settings)
     {
-        if (isBind) {
-            service.updateNotification(settings);
+        boolean isSilent = settings.optBoolean("silent", false);
+
+        if (isSilent) {
+            stopForeground(true);
+            return;
         }
+
+        Notification notification = makeNotification(settings);
+        getNotificationManager().notify(NOTIFICATION_ID, notification);
+
     }
 
     /**
-     * Bind the activity to a background service and put them into foreground
-     * state.
+     * Retrieves the resource ID of the app icon.
+     *
+     * @param settings A JSON dict containing the icon name.
      */
-    private void startService()
+    private int getIconResId (JSONObject settings)
     {
-        Activity context = cordova.getActivity();
+        String icon = settings.optString("icon", NOTIFICATION_ICON);
 
-        if (isDisabled || isBind)
+        int resId = getIconResId(icon, "mipmap");
+
+        if (resId == 0) {
+            resId = getIconResId(icon, "drawable");
+        }
+
+        return resId;
+    }
+
+    /**
+     * Retrieve resource id of the specified icon.
+     *
+     * @param icon The name of the icon.
+     * @param type The resource type where to look for.
+     *
+     * @return The resource id or 0 if not found.
+     */
+    private int getIconResId (String icon, String type)
+    {
+        Resources res  = getResources();
+        String pkgName = getPackageName();
+
+        int resId = res.getIdentifier(icon, type, pkgName);
+
+        if (resId == 0) {
+            resId = res.getIdentifier("icon", type, pkgName);
+        }
+
+        return resId;
+    }
+
+    /**
+     * Set notification color if its supported by the SDK.
+     *
+     * @param notification A Notification.Builder instance
+     * @param settings A JSON dict containing the color definition (red: FF0000)
+     */
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    private void setColor (Notification.Builder notification, JSONObject settings)
+    {
+
+        String hex = settings.optString("color", null);
+
+        if (Build.VERSION.SDK_INT < 21 || hex == null)
             return;
 
-        Intent intent = new Intent(context, ForegroundService.class);
-
         try {
-            context.bindService(intent, connection, BIND_AUTO_CREATE);
-            fireEvent(Event.ACTIVATE, null);
-            context.startService(intent);
+            int aRGB = Integer.parseInt(hex, 16) + 0xFF000000;
+            notification.setColor(aRGB);
         } catch (Exception e) {
-            fireEvent(Event.FAILURE, String.format("'%s'", e.getMessage()));
+            e.printStackTrace();
         }
-
-        isBind = true;
     }
 
     /**
-     * Bind the activity to a background service and put them into foreground
-     * state.
+     * Returns the shared notification service manager.
      */
-    private void stopService()
+    private NotificationManager getNotificationManager()
     {
-        Activity context = cordova.getActivity();
-        Intent intent    = new Intent(context, ForegroundService.class);
-
-        if (!isBind) return;
-
-        fireEvent(Event.DEACTIVATE, null);
-        context.unbindService(connection);
-        context.stopService(intent);
-
-        isBind = false;
-    }
-
-    /**
-     * Fire vent with some parameters inside the web view.
-     *
-     * @param event The name of the event
-     * @param params Optional arguments for the event
-     */
-    private void fireEvent (Event event, String params)
-    {
-        String eventName = event.name().toLowerCase();
-        Boolean active   = event == Event.ACTIVATE;
-
-        String str = String.format("%s._setActive(%b)",
-                JS_NAMESPACE, active);
-
-        str = String.format("%s;%s.on('%s', %s)",
-                str, JS_NAMESPACE, eventName, params);
-
-        str = String.format("%s;%s.fireEvent('%s',%s);",
-                str, JS_NAMESPACE, eventName, params);
-
-        final String js = str;
-
-        cordova.getActivity().runOnUiThread(() -> webView.loadUrl("javascript:" + js));
+        return (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
     }
 }

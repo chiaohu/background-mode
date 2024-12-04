@@ -169,6 +169,8 @@ public class ForegroundService extends Service {
         }
         String title    = settings.optString("title", NOTIFICATION_TITLE);
         String text     = settings.optString("text", NOTIFICATION_TEXT);
+        Log.d("BackgroundMode", "Notification Title: " + title);
+        Log.d("BackgroundMode", "Notification Text: " + text);
         boolean bigText = settings.optBoolean("bigText", false);
 
         Context context = getApplicationContext();

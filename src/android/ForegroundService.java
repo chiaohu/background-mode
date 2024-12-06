@@ -199,7 +199,7 @@ public class ForegroundService extends Service {
 
         setColor(notification, settings);
 
-        if (intent != null && settings.optBoolean("resume")) {
+        if (intent != null) {
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
             PendingIntent contentIntent = PendingIntent.getActivity(
                     context, NOTIFICATION_ID, intent,

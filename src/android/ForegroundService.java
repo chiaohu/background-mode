@@ -170,8 +170,7 @@ public class ForegroundService extends Service {
 
         // 确保 Intent 有效
         if (intent == null) {
-            String pkgName = context.getPackageName();
-            intent = context.getPackageManager().getLaunchIntentForPackage(pkgName);
+            throw new IllegalStateException("Unable to create launch intent for package: " + pkgName);
         }
 
         // 添加标志，确保不会重复启动多个 Activity

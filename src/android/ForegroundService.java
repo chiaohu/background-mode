@@ -170,7 +170,8 @@ public class ForegroundService extends Service {
 
         // 确保 Intent 有效
         if (intent == null) {
-            intent = new Intent(context, MainActivity.class);
+            String pkgName = context.getPackageName();
+            intent = context.getPackageManager().getLaunchIntentForPackage(pkgName);
         }
 
         // 添加标志，确保不会重复启动多个 Activity

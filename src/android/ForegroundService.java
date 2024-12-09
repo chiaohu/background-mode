@@ -204,9 +204,13 @@ public class ForegroundService extends Service {
 
         if (intent != null && settings.optBoolean("resume", DEFAULT_RESUME)) {
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                flags |= PendingIntent.FLAG_IMMUTABLE;
+            }
+
             PendingIntent contentIntent = PendingIntent.getActivity(
-                    context, NOTIFICATION_ID, intent,
-                    PendingIntent.FLAG_UPDATE_CURRENT);
+                    context, NOTIFICATION_ID, intent, flags);
 
 
             notification.setContentIntent(contentIntent);

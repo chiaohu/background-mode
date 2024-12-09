@@ -35,6 +35,9 @@ public class ForegroundService extends Service {
     // Default text of the background notification
     private static final String NOTIFICATION_TEXT =
             "報價服務持續運作中...";
+    
+    // Default value for the "resume" setting
+    private static final boolean DEFAULT_RESUME = true;
 
     // Default icon of the background notification
     private static final String NOTIFICATION_ICON = "icon";
@@ -150,51 +153,63 @@ public class ForegroundService extends Service {
      *
      * @param settings The config settings
      */
-    private Notification makeNotification(JSONObject settings) {
+    private Notification makeNotification (JSONObject settings)
+    {
+        // use channelid for Oreo and higher
         String CHANNEL_ID = "cordova-plugin-background-mode-id";
-        if (Build.VERSION.SDK_INT >= 26) {
-            NotificationChannel mChannel = new NotificationChannel(
-                    CHANNEL_ID,
-                    "cordova-plugin-background-mode",
-                    NotificationManager.IMPORTANCE_LOW
-            );
-            getNotificationManager().createNotificationChannel(mChannel);
-        }
+        if(Build.VERSION.SDK_INT >= 26){
+        // The user-visible name of the channel.
+        CharSequence name = "cordova-plugin-background-mode";
+        // The user-visible description of the channel.
+        String description = "cordova-plugin-background-moden notification";
 
-        String title = settings.optString("title", NOTIFICATION_TITLE);
-        String text = settings.optString("text", NOTIFICATION_TEXT);
+        int importance = NotificationManager.IMPORTANCE_LOW;
+
+        NotificationChannel mChannel = new NotificationChannel(CHANNEL_ID, name,importance);
+
+        // Configure the notification channel.
+        mChannel.setDescription(description);
+
+        getNotificationManager().createNotificationChannel(mChannel);
+        }
+        String title    = settings.optString("title", NOTIFICATION_TITLE);
+        String text     = settings.optString("text", NOTIFICATION_TEXT);
+        boolean bigText = settings.optBoolean("bigText", false);
 
         Context context = getApplicationContext();
-        String pkgName = context.getPackageName();
-        Intent intent = context.getPackageManager().getLaunchIntentForPackage(pkgName);
+        String pkgName  = context.getPackageName();
+        Intent intent   = context.getPackageManager()
+                .getLaunchIntentForPackage(pkgName);
 
-        // 确保 Intent 有效
-        if (intent == null) {
-            throw new IllegalStateException("Unable to create launch intent for package: " + pkgName);
+        Notification.Builder notification = new Notification.Builder(context)
+                .setContentTitle(title)
+                .setContentText(text)
+                .setOngoing(true)
+                .setSmallIcon(getIconResId(settings));
+
+        if(Build.VERSION.SDK_INT >= 26){
+                   notification.setChannelId(CHANNEL_ID);
         }
 
-        // 添加标志，确保不会重复启动多个 Activity
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        if (settings.optBoolean("hidden", true)) {
+            notification.setPriority(Notification.PRIORITY_MIN);
+        }
 
-        // 创建 PendingIntent，将点击通知与 Intent 关联
-        PendingIntent contentIntent = PendingIntent.getActivity(
-                context,
-                NOTIFICATION_ID,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT
-        );
+        if (bigText || text.contains("\n")) {
+            notification.setStyle(
+                    new Notification.BigTextStyle().bigText(text));
+        }
 
-        // 构建通知
-        Notification.Builder notification = new Notification.Builder(context)
-                .setContentTitle(title) // 设置通知标题
-                .setContentText(text)   // 设置通知内容
-                .setOngoing(true)       // 持续通知，不可滑动清除
-                .setSmallIcon(getIconResId(settings)) // 设置通知图标
-                .setContentIntent(contentIntent);    // 设置点击事件
+        setColor(notification, settings);
 
-        // 设置通知频道 (适配 Android 8.0+)
-        if (Build.VERSION.SDK_INT >= 26) {
-            notification.setChannelId(CHANNEL_ID);
+        if (intent != null && settings.optBoolean("resume", DEFAULT_RESUME))) {
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            PendingIntent contentIntent = PendingIntent.getActivity(
+                    context, NOTIFICATION_ID, intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT);
+
+
+            notification.setContentIntent(contentIntent);
         }
 
         return notification.build();

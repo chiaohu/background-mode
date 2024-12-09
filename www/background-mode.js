@@ -501,22 +501,19 @@ exports._pluginInitialize = function()
 };
 
 // Called before 'deviceready' listener will be called
-if (channel && channel.onCordovaReady && typeof channel.onCordovaReady.subscribe === 'function') {
-    channel.onCordovaReady.subscribe(function() {
-        if (channel.onCordovaInfoReady && typeof channel.onCordovaInfoReady.subscribe === 'function') {
-            channel.onCordovaInfoReady.subscribe(function() {
-                if (exports && typeof exports._pluginInitialize === 'function') {
-                    exports._pluginInitialize();
-                } else {
-                    console.error('Plugin initialization function `_pluginInitialize` is missing.');
-                }
-            });
+if (channel && channel.onCordovaInfoReady && typeof channel.onCordovaInfoReady.subscribe === 'function') {
+    channel.onCordovaInfoReady.subscribe(function () {
+        if (exports && typeof exports._pluginInitialize === 'function') {
+            exports._pluginInitialize();
         } else {
-            console.error('channel.onCordovaInfoReady is not defined or does not have `subscribe` method.');
+            console.error('Plugin initialization function `_pluginInitialize` is missing.');
         }
     });
 } else {
-    console.error('channel.onCordovaReady is not defined or does not have `subscribe` method.');
+    console.warn('channel.onCordovaInfoReady is not defined. Skipping initialization.');
+    if (exports && typeof exports._pluginInitialize === 'function') {
+        exports._pluginInitialize();
+    }
 }
 
 // Called after 'deviceready' event

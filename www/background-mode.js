@@ -486,49 +486,51 @@ exports._setActive = function(value)
  *
  * @return [ Void ]
  */
-exports._pluginInitialize = function()
-{
-    this._isAndroid = device.platform.match(/^android|amazon/i) !== null;
+exports._pluginInitialize = function() {
+    if (typeof device !== 'undefined' && device.platform) {
+        this._isAndroid = device.platform.match(/^android|amazon/i) !== null;
+    } else {
+        console.warn('Device platform is not available yet. Defaulting to non-Android.');
+        this._isAndroid = false;
+    }
+
     this.setDefaults({});
 
-    if (device.platform == 'browser')
-    {
+    if (device && device.platform === 'browser') {
         this.enable();
         this._isEnabled = true;
     }
 
-    this._isActive  = this._isActive || device.platform == 'browser';
+    this._isActive = this._isActive || (device && device.platform === 'browser');
 };
 
 // Called before 'deviceready' listener will be called
-if (channel && channel.onCordovaReady && typeof channel.onCordovaReady.subscribe === 'function') {
-    channel.onCordovaReady.subscribe(function() {
-        if (channel.onCordovaInfoReady && typeof channel.onCordovaInfoReady.subscribe === 'function') {
-            channel.onCordovaInfoReady.subscribe(function() {
-                if (exports && typeof exports._pluginInitialize === 'function') {
-                    exports._pluginInitialize();
-                } else {
-                    console.error('Plugin initialization function `_pluginInitialize` is missing.');
-                }
+if (channel && channel.onCordovaInfoReady && typeof channel.onCordovaInfoReady.subscribe === 'function') {
+    channel.onCordovaInfoReady.subscribe(function() {
+        if (window.cordova && channel) {
+            document.addEventListener('deviceready', function() {
+                exports._pluginInitialize();
             });
         } else {
-            console.error('channel.onCordovaInfoReady is not defined or does not have `subscribe` method.');
+            console.error('Cordova or channel is not available. Plugin initialization skipped.');
         }
     });
 } else {
-    console.error('channel.onCordovaReady is not defined or does not have `subscribe` method.');
+    console.warn('channel.onCordovaInfoReady is not defined. Skipping initialization.');
+    if (exports && typeof exports._pluginInitialize === 'function') {
+        document.addEventListener('deviceready', function() {
+            exports._pluginInitialize();
+        });
+    }
 }
 
 // Called after 'deviceready' event
-channel.deviceready.subscribe(function()
-{
-    if (exports.isEnabled())
-    {
+channel.deviceready.subscribe(function() {
+    if (exports.isEnabled()) {
         exports.fireEvent('enable');
     }
 
-    if (exports.isActive())
-    {
+    if (exports.isActive()) {
         exports.fireEvent('activate');
     }
 });

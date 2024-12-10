@@ -14,6 +14,7 @@ import android.os.Build;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.app.NotificationChannel;
+import android.util.Log;
 
 import org.json.JSONObject;
 
@@ -151,6 +152,7 @@ public class ForegroundService extends Service {
      * @param settings The config settings
      */
     private Notification makeNotification(JSONObject settings) {
+        Log.d("BackgroundMode", "Notification settings: " + settings.toString());
         String CHANNEL_ID = "cordova-plugin-background-mode-id";
         if (Build.VERSION.SDK_INT >= 26) {
             CharSequence name = "cordova-plugin-background-mode";
@@ -209,6 +211,8 @@ public class ForegroundService extends Service {
             stopForeground(true);
             return;
         }
+
+        Log.d("BackgroundMode", "Updating notification with settings: " + settings.toString());
 
         Notification notification = makeNotification(settings);
         getNotificationManager().notify(NOTIFICATION_ID, notification);

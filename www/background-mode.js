@@ -141,17 +141,17 @@ exports.configure = function (options) {
     // 檢查並合併 options 與 defaults
     this._settings = this._mergeObjects(options, defaults);
 
-    // 確保正確傳遞到原生層
+    // 傳遞到原生層
+    console.log('Preparing to send settings:', this._settings);
     cordova.exec(
-        null,
-        null,
+        () => console.log('Settings sent successfully'),
+        (err) => console.error('Failed to send settings:', err),
         'BackgroundMode',
         'configure',
         [this._settings, true]
     );
 
-    // 驗證 _settings 是否正確
-    console.log('configure settings:', this._settings);
+    console.log('Settings after configure call:', this._settings);
 };
 
 /**

@@ -39,8 +39,7 @@ exports.enable = function()
         exports.fireEvent('enable');
     };
 
-    cordova.exec(null, null, 'BackgroundMode', 'configure', [options, true]);
-    // cordova.exec(fn, null, 'BackgroundMode', 'enable', []);
+    cordova.exec(fn, null, 'BackgroundMode', 'enable', []);
 };
 
 /**

@@ -175,21 +175,10 @@ public class BackgroundMode extends CordovaPlugin {
      */
     private void configure(JSONObject settings, boolean update)
     {
-        try {
-            if (settings == null) {
-                settings = new JSONObject();
-            }
-
-            // 合併新設定到 defaultSettings
-            for (String key : JSONObject.getNames(settings)) {
-                defaultSettings.put(key, settings.get(key));
-            }
-
-            if (update) {
-                updateNotification(defaultSettings);
-            }
-        } catch (Exception e) {
-            fireEvent(Event.FAILURE, String.format("'%s'", e.getMessage()));
+        if (update) {
+            updateNotification(settings);
+        } else {
+            setDefaultSettings(settings);
         }
     }
 
@@ -217,20 +206,8 @@ public class BackgroundMode extends CordovaPlugin {
      */
     private void updateNotification(JSONObject settings)
     {
-        if (!isBind) {
-            // 如果 service 尚未綁定，延遲更新或提示錯誤
-            fireEvent(Event.FAILURE, "'Service not bound'");
-            return;
-        }
-
-        try {
-            if (service != null) {
-                service.updateNotification(settings);
-            } else {
-                fireEvent(Event.FAILURE, "'Service instance is null'");
-            }
-        } catch (Exception e) {
-            fireEvent(Event.FAILURE, String.format("'%s'", e.getMessage()));
+        if (isBind) {
+            service.updateNotification(settings);
         }
     }
 

@@ -504,6 +504,30 @@ exports._pluginInitialize = function() {
     this._isActive = this._isActive || (device && device.platform === 'browser');
 };
 
+/**
+ * 更新通知的標題和內容 (僅限 Android).
+ *
+ * @param [ String ] title 通知的新標題.
+ * @param [ String ] text 通知的新內容.
+ *
+ * @return [ Void ]
+ */
+exports.updateNotification = function (title, text) {
+    if (this._isAndroid) {
+        cordova.exec(
+            null, // 成功回調
+            function (error) {
+                console.error('Failed to update notification:', error);
+            }, // 錯誤回調
+            'BackgroundMode', // 對應的原生類名
+            'updateNotificationContent', // 原生方法名稱
+            [{ title: title, text: text }] // 傳遞的參數
+        );
+    } else {
+        console.warn('updateNotification is only supported on Android.');
+    }
+};
+
 // Called before 'deviceready' listener will be called
 if (channel && channel.onCordovaInfoReady && typeof channel.onCordovaInfoReady.subscribe === 'function') {
     channel.onCordovaInfoReady.subscribe(function() {

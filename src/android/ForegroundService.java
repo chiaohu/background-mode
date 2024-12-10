@@ -169,7 +169,7 @@ public class ForegroundService extends Service {
         Intent intent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
         if (intent == null) {
             // 如果無法取得啟動頁 Intent，提供一個默認的 Intent
-            intent = new Intent(context, MainActivity.class); // 替換 MainActivity 為你的主頁 Activity
+            intent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName()); // 替換 MainActivity 為你的主頁 Activity
         }
 
         // 確保 Intent 啟動 APP 並清除多餘的 Activity 堆疊

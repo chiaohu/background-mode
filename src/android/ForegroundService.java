@@ -150,63 +150,47 @@ public class ForegroundService extends Service {
      *
      * @param settings The config settings
      */
-    private Notification makeNotification (JSONObject settings)
-    {
-        // use channelid for Oreo and higher
+    private Notification makeNotification(JSONObject settings) {
         String CHANNEL_ID = "cordova-plugin-background-mode-id";
-        if(Build.VERSION.SDK_INT >= 26){
-        // The user-visible name of the channel.
-        CharSequence name = "cordova-plugin-background-mode";
-        // The user-visible description of the channel.
-        String description = "cordova-plugin-background-moden notification";
+        if (Build.VERSION.SDK_INT >= 26) {
+            CharSequence name = "cordova-plugin-background-mode";
+            String description = "cordova-plugin-background-mode notification";
+            int importance = NotificationManager.IMPORTANCE_LOW;
 
-        int importance = NotificationManager.IMPORTANCE_LOW;
-
-        NotificationChannel mChannel = new NotificationChannel(CHANNEL_ID, name,importance);
-
-        // Configure the notification channel.
-        mChannel.setDescription(description);
-
-        getNotificationManager().createNotificationChannel(mChannel);
+            NotificationChannel mChannel = new NotificationChannel(CHANNEL_ID, name, importance);
+            mChannel.setDescription(description);
+            getNotificationManager().createNotificationChannel(mChannel);
         }
-        String title    = settings.optString("title", NOTIFICATION_TITLE);
-        String text     = settings.optString("text", NOTIFICATION_TEXT);
-        boolean bigText = settings.optBoolean("bigText", false);
+
+        String title = settings.optString("title", NOTIFICATION_TITLE);
+        String text = settings.optString("text", NOTIFICATION_TEXT);
 
         Context context = getApplicationContext();
-        String pkgName  = context.getPackageName();
-        Intent intent   = context.getPackageManager()
-                .getLaunchIntentForPackage(pkgName);
+        Intent intent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
+        if (intent == null) {
+            // 如果無法取得啟動頁 Intent，提供一個默認的 Intent
+            intent = new Intent(context, MainActivity.class); // 替換 MainActivity 為你的主頁 Activity
+        }
+
+        // 確保 Intent 啟動 APP 並清除多餘的 Activity 堆疊
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+
+        PendingIntent contentIntent = PendingIntent.getActivity(
+                context,
+                NOTIFICATION_ID,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
 
         Notification.Builder notification = new Notification.Builder(context)
                 .setContentTitle(title)
                 .setContentText(text)
                 .setOngoing(true)
-                .setSmallIcon(getIconResId(settings));
+                .setSmallIcon(getIconResId(settings))
+                .setContentIntent(contentIntent); // 點擊通知後執行
 
-        if(Build.VERSION.SDK_INT >= 26){
-                   notification.setChannelId(CHANNEL_ID);
-        }
-
-        if (settings.optBoolean("hidden", true)) {
-            notification.setPriority(Notification.PRIORITY_MIN);
-        }
-
-        if (bigText || text.contains("\n")) {
-            notification.setStyle(
-                    new Notification.BigTextStyle().bigText(text));
-        }
-
-        setColor(notification, settings);
-
-        if (intent != null && settings.optBoolean("resume")) {
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            PendingIntent contentIntent = PendingIntent.getActivity(
-                    context, NOTIFICATION_ID, intent,
-                    PendingIntent.FLAG_UPDATE_CURRENT);
-
-
-            notification.setContentIntent(contentIntent);
+        if (Build.VERSION.SDK_INT >= 26) {
+            notification.setChannelId(CHANNEL_ID);
         }
 
         return notification.build();

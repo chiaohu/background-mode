@@ -203,8 +203,14 @@ public class ForegroundService extends Service {
      *
      * @param settings The config settings
      */
-    protected void updateNotification (JSONObject settings)
-    {
+    protected void updateNotification(JSONObject settings) {
+        Log.d("BackgroundMode", "Updating notification with settings: " + settings.toString());
+
+        if (settings == null || settings.length() == 0) {
+            Log.e("BackgroundMode", "Received empty settings, using default.");
+            settings = BackgroundMode.getDefaults();
+        }
+
         boolean isSilent = settings.optBoolean("silent", false);
 
         if (isSilent) {
@@ -212,11 +218,8 @@ public class ForegroundService extends Service {
             return;
         }
 
-        Log.d("BackgroundMode", "Updating notification with settings: " + settings.toString());
-
         Notification notification = makeNotification(settings);
         getNotificationManager().notify(NOTIFICATION_ID, notification);
-
     }
 
     /**

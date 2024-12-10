@@ -138,14 +138,20 @@ exports.configure = function (options) {
         return;
     }
 
-    // 確保合併 options 與 defaults
+    // 檢查並合併 options 與 defaults
     this._settings = this._mergeObjects(options, defaults);
 
-    // 傳遞到原生層
-    cordova.exec(null, null, 'BackgroundMode', 'configure', [this._settings, true]);
+    // 確保正確傳遞到原生層
+    cordova.exec(
+        null,
+        null,
+        'BackgroundMode',
+        'configure',
+        [this._settings, true]
+    );
 
-    // 額外更新通知
-    cordova.exec(null, null, 'BackgroundMode', 'updateNotification', [this._settings]);
+    // 驗證 _settings 是否正確
+    console.log('configure settings:', this._settings);
 };
 
 /**

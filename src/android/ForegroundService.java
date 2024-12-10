@@ -115,7 +115,7 @@ public class ForegroundService extends Service {
         Intent intent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
 
         if (intent == null) {
-            intent = new Intent(context, MainActivity.class); // 替換為你的主頁
+            intent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName()); // 替換為你的主頁
         }
 
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);

@@ -36,6 +36,7 @@ exports.enable = function()
 
     var fn = function() {
         exports._isEnabled = true;
+        exports._isActive = true; // 確保 isActive 被正確設置
         exports.fireEvent('enable');
     };
 
@@ -137,16 +138,14 @@ exports.configure = function (options) {
         return;
     }
 
-    if (!this._isActive) {
-        console.log('BackgroundMode is not active, skipped...');
-        return;
-    }
-
-    // 合併 options 與 defaults
+    // 確保合併 options 與 defaults
     this._settings = this._mergeObjects(options, defaults);
 
     // 傳遞到原生層
     cordova.exec(null, null, 'BackgroundMode', 'configure', [this._settings, true]);
+
+    // 額外更新通知
+    cordova.exec(null, null, 'BackgroundMode', 'updateNotification', [this._settings]);
 };
 
 /**

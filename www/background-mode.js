@@ -130,25 +130,23 @@ exports.setDefaults = function (overrides, fn)
  *
  * @return [ Void ]
  */
-exports.configure = function (options)
-{
-    var settings = this.getSettings(),
-        defaults = this.getDefaults();
+exports.configure = function (options) {
+    var defaults = this.getDefaults();
 
-    if (!this._isAndroid)
+    if (!this._isAndroid) {
         return;
+    }
 
-    if (!this._isActive)
-    {
+    if (!this._isActive) {
         console.log('BackgroundMode is not active, skipped...');
         return;
     }
 
-    this._mergeObjects(options, settings);
-    this._mergeObjects(options, defaults);
-    this._settings = options;
+    // 合併 options 與 defaults
+    this._settings = this._mergeObjects(options, defaults);
 
-    cordova.exec(null, null, 'BackgroundMode', 'configure', [options, true]);
+    // 傳遞到原生層
+    cordova.exec(null, null, 'BackgroundMode', 'configure', [this._settings, true]);
 };
 
 /**

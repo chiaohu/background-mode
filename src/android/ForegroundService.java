@@ -205,6 +205,9 @@ public class ForegroundService extends Service {
      */
     protected void updateNotification (JSONObject settings)
     {
+        if (settings == null || settings.length() == 0) {
+            Log.e("BackgroundMode", "Received empty settings in updateNotification");
+        }
         boolean isSilent = settings.optBoolean("silent", false);
 
         if (isSilent) {

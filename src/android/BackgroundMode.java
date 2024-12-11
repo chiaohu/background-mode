@@ -176,7 +176,12 @@ public class BackgroundMode extends CordovaPlugin {
      */
     private void configure(JSONObject settings, boolean update)
     {
+        if (settings == null || settings.length() == 0) {
+            Log.e("BackgroundMode", "Received empty settings in configure");
+            return;
+        }
         Log.d("BackgroundMode", "Received settings in configure: " + settings.toString());
+        Log.d("BackgroundMode", "Update flag: " + update);
         if (update) {
             updateNotification(settings);
         } else {

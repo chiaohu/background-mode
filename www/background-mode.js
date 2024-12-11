@@ -127,9 +127,13 @@ exports.configure = function (options) {
     this._settings = this._mergeObjects(options, this.getDefaults());
     console.log('Settings being configured:', this._settings);
 
-    if (this._isAndroid) {
-        cordova.exec(null, null, 'BackgroundMode', 'configure', [this._settings, true]);
-    }
+    cordova.exec(
+        (result) => console.log('Settings sent successfully:', result),
+        (error) => console.error('Failed to send settings:', error),
+        'BackgroundMode',
+        'configure',
+        [this._settings, true] // 傳遞設定與更新標記
+    );
 };
 
 /**

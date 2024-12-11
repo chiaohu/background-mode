@@ -111,10 +111,12 @@ public class ForegroundService extends Service {
         JSONObject settings = BackgroundMode.getSettings();
         boolean isSilent    = settings.optBoolean("silent", false);
 
-        Log.d("BackgroundMode", "keepAwake: " + isSilent);
+        Log.d("BackgroundMode", "keepAwake:" + isSilent);
+        Log.d("BackgroundMode", "keepAwake called with settings:" + settings.toString());
 
         if (!isSilent) {
-            startForeground(NOTIFICATION_ID, makeNotification());
+            updateNotification(settings);
+            // startForeground(NOTIFICATION_ID, makeNotification());
         }
 
         PowerManager pm = (PowerManager)getSystemService(POWER_SERVICE);

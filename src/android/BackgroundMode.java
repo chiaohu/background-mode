@@ -14,6 +14,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import android.util.Log;
 import java.util.Iterator;
+import android.app.NotificationManager;
+import android.content.Context;
 
 import de.einfachhans.BackgroundMode.ForegroundService.ForegroundBinder;
 
@@ -274,8 +276,8 @@ public class BackgroundMode extends CordovaPlugin {
 
          // 清除通知
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-        if (serviceInstance != null) {
-           notificationManager.cancel(ForegroundService.NOTIFICATION_ID); // 清除通知
+        if (notificationManager != null) {
+            notificationManager.cancel(ForegroundService.NOTIFICATION_ID); // 清除通知
         }
 
         isBind = false;

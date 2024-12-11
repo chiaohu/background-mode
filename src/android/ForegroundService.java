@@ -107,8 +107,11 @@ public class ForegroundService extends Service {
     @SuppressLint("WakelockTimeout")
     private void keepAwake()
     {
+        
         JSONObject settings = BackgroundMode.getSettings();
         boolean isSilent    = settings.optBoolean("silent", false);
+
+        Log.d("BackgroundMode", "keepAwake: " + isSilent);
 
         if (!isSilent) {
             startForeground(NOTIFICATION_ID, makeNotification());

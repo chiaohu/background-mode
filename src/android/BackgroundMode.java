@@ -123,7 +123,13 @@ public class BackgroundMode extends CordovaPlugin {
      */
     @Override
     public void onStop () {
-        clearKeyguardFlags(cordova.getActivity());
+        // clearKeyguardFlags(cordova.getActivity());
+        super.onStop();
+
+        if (inBackground) {
+            stopService();
+            Log.d("BackgroundMode", "App stopped, stopping foreground service.");
+        }
     }
 
     /**
@@ -146,6 +152,7 @@ public class BackgroundMode extends CordovaPlugin {
     {
         stopService();
         android.os.Process.killProcess(android.os.Process.myPid());
+        Log.d("BackgroundMode", "App destroyed, stopping service.");
     }
 
     /**
@@ -259,7 +266,8 @@ public class BackgroundMode extends CordovaPlugin {
 
         if (!isBind) return;
 
-        fireEvent(Event.DEACTIVATE, null);
+        Log.d("BackgroundMode", "stopService");
+
         context.unbindService(connection);
         context.stopService(intent);
 

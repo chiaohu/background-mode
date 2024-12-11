@@ -123,13 +123,14 @@ public class BackgroundMode extends CordovaPlugin {
      */
     @Override
     public void onStop () {
-        // clearKeyguardFlags(cordova.getActivity());
-        super.onStop();
+        clearKeyguardFlags(cordova.getActivity());
+        Log.d("BackgroundMode", "App stopped, stopping foreground service.");
+        // super.onStop();
 
-        if (inBackground) {
-            stopService();
-            Log.d("BackgroundMode", "App stopped, stopping foreground service.");
-        }
+        // if (inBackground) {
+        //     stopService();
+        //     Log.d("BackgroundMode", "App stopped, stopping foreground service.");
+        // }
     }
 
     /**
@@ -265,7 +266,7 @@ public class BackgroundMode extends CordovaPlugin {
         Intent intent    = new Intent(context, ForegroundService.class);
 
         if (!isBind) return;
-
+        fireEvent(Event.DEACTIVATE, null);
         Log.d("BackgroundMode", "stopService");
 
         context.unbindService(connection);

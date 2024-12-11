@@ -183,8 +183,10 @@ public class BackgroundMode extends CordovaPlugin {
         Log.d("BackgroundMode", "Received settings in configure: " + settings.toString());
         Log.d("BackgroundMode", "Update flag: " + update);
         if (update) {
+            Log.d("BackgroundMode", "updateNotification");
             updateNotification(settings);
         } else {
+            Log.d("BackgroundMode", "setDefaultSettings");
             setDefaultSettings(settings);
         }
     }

@@ -107,19 +107,11 @@ exports.getSettings = function()
  */
 exports.setDefaults = function (overrides, fn)
 {
-    var defaults = this.getDefaults();
+    this._defaults = this._mergeObjects(overrides, this.getDefaults());
+    console.log('Updated defaults:', this._defaults);
 
-    for (var key in defaults)
-    {
-        if (overrides.hasOwnProperty(key))
-        {
-            defaults[key] = overrides[key];
-        }
-    }
-
-    if (this._isAndroid)
-    {
-        cordova.exec((fn || function () {}), null, 'BackgroundMode', 'configure', [defaults, false]);
+    if (this._isAndroid) {
+        cordova.exec(null, null, 'BackgroundMode', 'configure', [this._defaults, false]);
     }
 };
 
@@ -132,26 +124,12 @@ exports.setDefaults = function (overrides, fn)
  * @return [ Void ]
  */
 exports.configure = function (options) {
-    var defaults = this.getDefaults();
+    this._settings = this._mergeObjects(options, this.getDefaults());
+    console.log('Settings being configured:', this._settings);
 
-    if (!this._isAndroid) {
-        return;
+    if (this._isAndroid) {
+        cordova.exec(null, null, 'BackgroundMode', 'configure', [this._settings, true]);
     }
-
-    // 檢查並合併 options 與 defaults
-    this._settings = this._mergeObjects(options, defaults);
-
-    // 傳遞到原生層
-    console.log('Preparing to send settings:', this._settings);
-    cordova.exec(
-        () => console.log('Settings sent successfully'),
-        (err) => console.error('Failed to send settings:', err),
-        'BackgroundMode',
-        'configure',
-        [this._settings, true]
-    );
-
-    console.log('Settings after configure call:', this._settings);
 };
 
 /**
@@ -448,12 +426,12 @@ exports._defaults =
  */
 exports._mergeObjects = function (options, toMergeIn)
 {
+    options = options || {};
     for (var key in toMergeIn)
     {
         if (!options.hasOwnProperty(key))
         {
             options[key] = toMergeIn[key];
-            continue;
         }
     }
 

@@ -89,7 +89,6 @@ public class ForegroundService extends Service {
     public void onDestroy()
     {
         super.onDestroy();
-        Log.d("BackgroundMode", "onDestroy, ForegroundService destroyed, notification cleared.");
         sleepWell();
     }
 
@@ -131,8 +130,6 @@ public class ForegroundService extends Service {
     {
         stopForeground(true);
         getNotificationManager().cancel(NOTIFICATION_ID);
-
-        Log.d("BackgroundMode", "sleepWell, ForegroundService destroyed, notification cleared.");
 
         if (wakeLock != null) {
             wakeLock.release();

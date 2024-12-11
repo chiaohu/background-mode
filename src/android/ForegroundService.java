@@ -111,12 +111,8 @@ public class ForegroundService extends Service {
         JSONObject settings = BackgroundMode.getSettings();
         boolean isSilent    = settings.optBoolean("silent", false);
 
-        Log.d("BackgroundMode", "keepAwake:" + isSilent);
-        Log.d("BackgroundMode", "keepAwake called with settings:" + settings.toString());
-
         if (!isSilent) {
             updateNotification(settings);
-            // startForeground(NOTIFICATION_ID, makeNotification());
         }
 
         PowerManager pm = (PowerManager)getSystemService(POWER_SERVICE);
@@ -157,7 +153,6 @@ public class ForegroundService extends Service {
      * @param settings The config settings
      */
     private Notification makeNotification(JSONObject settings) {
-        Log.d("BackgroundMode", "Notification settings: " + settings.toString());
         String CHANNEL_ID = "cordova-plugin-background-mode-id";
         if (Build.VERSION.SDK_INT >= 26) {
             CharSequence name = "cordova-plugin-background-mode";
@@ -216,14 +211,10 @@ public class ForegroundService extends Service {
         
         boolean isSilent = settings.optBoolean("silent", false);
 
-        Log.d("BackgroundMode", "isSilent: " + isSilent);
-
         if (isSilent) {
             stopForeground(true);
             return;
         }
-
-        Log.d("BackgroundMode", "Updating notification with settings: " + settings.toString());
 
         Notification notification = makeNotification(settings);
         getNotificationManager().notify(NOTIFICATION_ID, notification);

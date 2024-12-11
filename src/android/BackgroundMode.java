@@ -13,6 +13,7 @@ import org.apache.cordova.PluginResult.Status;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import android.util.Log;
+import java.util.Iterator;
 
 import de.einfachhans.BackgroundMode.ForegroundService.ForegroundBinder;
 

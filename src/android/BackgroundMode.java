@@ -176,18 +176,38 @@ public class BackgroundMode extends CordovaPlugin {
      */
     private void configure(JSONObject settings, boolean update)
     {
-        if (settings == null || settings.length() == 0) {
-            Log.e("BackgroundMode", "Received empty settings in configure");
-            return;
-        }
-        Log.d("BackgroundMode", "Received settings in configure: " + settings.toString());
-        Log.d("BackgroundMode", "Update flag: " + update);
-        if (update) {
-            Log.d("BackgroundMode", "updateNotification");
-            updateNotification(settings);
-        } else {
-            Log.d("BackgroundMode", "setDefaultSettings");
-            setDefaultSettings(settings);
+        // if (settings == null || settings.length() == 0) {
+        //     Log.e("BackgroundMode", "Received empty settings in configure");
+        //     return;
+        // }
+        // Log.d("BackgroundMode", "Received settings in configure: " + settings.toString());
+        // Log.d("BackgroundMode", "Update flag: " + update);
+        // if (update) {
+        //     Log.d("BackgroundMode", "updateNotification");
+        //     updateNotification(settings);
+        // } else {
+        //     Log.d("BackgroundMode", "setDefaultSettings");
+        //     setDefaultSettings(settings);
+        // }
+        try {
+            if (settings == null || settings.length() == 0) {
+                Log.e("BackgroundMode", "Received empty settings in configure");
+                return;
+            }
+
+            Log.d("BackgroundMode", "Configuring with settings: " + settings.toString());
+
+            for (Iterator<String> it = settings.keys(); it.hasNext(); ) {
+                String key = it.next();
+                defaultSettings.put(key, settings.get(key));
+            }
+
+            if (update) {
+                Log.d("BackgroundMode", "Updated defaultSettings: " + defaultSettings.toString());
+                updateNotification(defaultSettings); // 更新通知
+            }
+        } catch (Exception e) {
+            Log.e("BackgroundMode", "Failed to configure settings: " + e.getMessage());
         }
     }
 

@@ -273,10 +273,9 @@ public class BackgroundMode extends CordovaPlugin {
         context.stopService(intent);
 
          // 清除通知
-        ForegroundService serviceInstance = service; // 確保有服務實例
+        NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         if (serviceInstance != null) {
-            serviceInstance.stopForeground(true); // 停止前台通知
-            serviceInstance.getNotificationManager().cancel(ForegroundService.NOTIFICATION_ID); // 確保通知被移除
+           notificationManager.cancel(ForegroundService.NOTIFICATION_ID); // 清除通知
         }
 
         isBind = false;

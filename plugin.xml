@@ -84,13 +84,6 @@
             <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
         </config-file>
 
-        <config-file parent="/manifest/application" target="AndroidManifest.xml">
-            <service
-                android:name="cordova.plugins.backgroundmode.BackgroundModeService"
-                android:enabled="true"
-                android:exported="false" />
-        </config-file>
-
         <source-file
             src="src/android/BackgroundMode.java"
             target-dir="src/de/einfachhans/BackgroundMode" />
